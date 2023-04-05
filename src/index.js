@@ -28,16 +28,23 @@ const simpleLightbox = new SimpleLightbox(".gallery a", {
 })
 
 
-function onSearch(e) {
+async function onSearch(e) {
     e.preventDefault();
     searchQuery = e.target.searchQuery.value.trim();
     resetMarkup();
     if (!searchQuery) {
         return
     };
-    fetchPictures(searchQuery)
-    e.target.reset();
+    page = 1;
+    try {
+        const render = await fetchPictures(searchQuery);
+        renderMarkup(render)
+    } catch (error) {
+        console.warn(error)
+    }
+        e.target.reset();
 };
+
 
 function resetMarkup() {
     refs.galleryContainer.innerHTML = '';
@@ -71,8 +78,7 @@ function renderMarkup(pictures) {
                 <b>Downloads:<br> ${el.downloads}</b>
                 </p>
             </div>
-            </div>
-        `;
+            </div>`;
         return createdEl;
     }).join('');
 
@@ -85,14 +91,8 @@ function renderMarkup(pictures) {
     if (pictures.data.hits.length < 40) {
         refs.loadMoreBtn.classList.add('visually-hidden')
     }
-
-    
-
 };
 
-function onFetchError() {
-    Notiflix.Notify.failure('WTF?!');
-};
 
 function onLoadMore() {
     refs.loadMoreBtn.classList.add('visually-hidden');
@@ -120,9 +120,10 @@ async function fetchPictures(searchQuery) {
             },
         });
         
-    renderMarkup(response);
-    
+        return response;
     } catch (error) {
-    onFetchError(error);
+    
+        throw new Error(response.status);
     }
 }
+
